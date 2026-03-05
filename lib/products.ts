@@ -12,6 +12,16 @@ export interface Product {
   subCategoryName: string;
 }
 
+export interface ProductOverview {
+  stacklineSku: string;
+  subCategoryId: number;
+  title: string;
+  categoryName: string;
+  categoryId: number;
+  subCategoryName: string;
+  thumbnail: string;
+}
+
 export interface ProductFilters {
   category?: string;
   subCategory?: string;
@@ -27,7 +37,7 @@ export class ProductService {
     this.products = productsData as Product[];
   }
 
-  getAll(filters?: ProductFilters): Product[] {
+  getAll(filters?: ProductFilters): ProductOverview[] {
     let filtered = [...this.products];
 
     if (filters?.category) {
@@ -55,9 +65,14 @@ export class ProductService {
     const offset = filters?.offset || 0;
     const limit = filters?.limit || filtered.length;
 
-    return filtered.slice(offset, offset + limit);
+    const filteredOverview = filtered.map(({...item}) => ({...item, thumbnail: item.imageUrls?.[0]?.replace(/SL\d+/, "SL100") ?? ""}));
+    const filteredOverview2 = filteredOverview.map(( {featureBullets, imageUrls, ...rest}) => ({...rest}));
+
+    return filteredOverview2.slice(offset, offset + limit);
   }
 
+
+  
   getById(sku: string): Product | undefined {
     return this.products.find((p) => p.stacklineSku === sku);
   }

@@ -28,7 +28,7 @@ interface Product {
   title: string;
   categoryName: string;
   subCategoryName: string;
-  imageUrls: string[];
+  thumbnail: string;
 }
 
 export default function Home() {
@@ -43,6 +43,7 @@ export default function Home() {
     string | undefined
   >(undefined);
   const [loading, setLoading] = useState(true);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     fetch("/api/categories")
@@ -52,7 +53,7 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedCategory) {
-      fetch(`/api/subcategories`)
+      fetch(`/api/subcategories?category=${encodeURIComponent(selectedCategory)}`)
         .then((res) => res.json())
         .then((data) => setSubCategories(data.subCategories));
     } else {
@@ -62,9 +63,17 @@ export default function Home() {
   }, [selectedCategory]);
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     setLoading(true);
     const params = new URLSearchParams();
-    if (search) params.append("search", search);
+    if (debouncedSearch) params.append("search", search.trim());
     if (selectedCategory) params.append("category", selectedCategory);
     if (selectedSubCategory) params.append("subCategory", selectedSubCategory);
     params.append("limit", "20");
@@ -75,8 +84,8 @@ export default function Home() {
         setProducts(data.products);
         setLoading(false);
       });
-  }, [search, selectedCategory, selectedSubCategory]);
-
+  }, [debouncedSearch, selectedCategory, selectedSubCategory]);
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -135,8 +144,8 @@ export default function Home() {
                 variant="outline"
                 onClick={() => {
                   setSearch("");
-                  setSelectedCategory(undefined);
-                  setSelectedSubCategory(undefined);
+                  setSelectedCategory("");
+                  setSelectedSubCategory("");
                 }}
               >
                 Clear Filters
@@ -166,15 +175,16 @@ export default function Home() {
                   key={product.stacklineSku}
                   href={{
                     pathname: "/product",
-                    query: { product: JSON.stringify(product) },
+                    query: { sku: product.stacklineSku },
                   }}
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                     <CardHeader className="p-0">
                       <div className="relative h-48 w-full overflow-hidden rounded-t-lg bg-muted">
-                        {product.imageUrls[0] && (
+                        {product.thumbnail && (
                           <Image
-                            src={product.imageUrls[0]}
+                            src={product.thumbnail}
+			                      priority
                             alt={product.title}
                             fill
                             className="object-contain p-4"

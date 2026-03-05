@@ -9,6 +9,8 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+
+
 interface Product {
   stacklineSku: string;
   title: string;
@@ -21,19 +23,18 @@ interface Product {
 
 export default function ProductPage() {
   const searchParams = useSearchParams();
-  const productParam = searchParams.get('product');
+  const productParam = searchParams.get('sku');
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
-    if (productParam) {
-      try {
-        const parsedProduct = JSON.parse(productParam);
-        setProduct(parsedProduct);
-      } catch (error) {
-        console.error('Failed to parse product data:', error);
-      }
-    }
+
+
+    fetch(`/api/products/${productParam}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setProduct(data);
+      });    
   }, [productParam]);
 
   if (!product) {
